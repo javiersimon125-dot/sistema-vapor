@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Vapor — Cartocor</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e18;--panel:#111827;--border:#1e3050;--steam:#4fc3f7;--cond:#69ffb0;--thermo:#ffb347;--warn:#ff6b6b;--ok:#50fa7b;--text:#cdd6f4;--muted:#6c7a96;--white:#f0f4ff;--H:'Oswald',sans-serif;--B:'Source Sans 3',sans-serif;--M:'JetBrains Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--B);display:flex;flex-direction:column}
+nav{flex-shrink:0;background:rgba(10,14,24,.98);border-bottom:2px solid var(--border);height:52px;display:flex;align-items:center;padding:0 14px;overflow-x:auto;scrollbar-width:none;z-index:100}
+nav::-webkit-scrollbar{display:none}
+.brand{font-family:var(--H);font-size:1rem;font-weight:700;color:var(--white);letter-spacing:2px;margin-right:16px;border-right:1px solid var(--border);padding-right:16px;flex-shrink:0}
+.ntab{background:none;border:none;font-family:var(--H);font-size:.78rem;color:var(--muted);cursor:pointer;padding:0 12px;height:52px;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+.ntab:hover{color:var(--steam)}
+.ntab.on{color:var(--steam);border-bottom-color:var(--steam);background:rgba(79,195,247,.06)}
+.ntab.ai{color:#a78bfa}
+.ntab.ai.on{color:#a78bfa;border-bottom-color:#a78bfa;background:rgba(167,139,250,.06)}
+.pbar{flex-shrink:0;height:3px;background:var(--panel)}
+.pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--steam),var(--cond));transition:width .4s}
+#main{flex:1;overflow-y:auto;overflow-x:hidden}
+.slide{display:none;padding:24px 20px 80px;max-width:1100px;margin:0 auto}
+.slide.on{display:block;animation:fi .35s ease}
+@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#p7{display:none;flex-direction:column;height:100%;padding:0;max-width:100%}
+#p7.on{display:flex}
+#botbar{flex-shrink:0;background:rgba(10,14,24,.98);border-top:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+.nbtn{font-family:var(--H);font-size:.9rem;font-weight:600;letter-spacing:1px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 22px;cursor:pointer;transition:all .2s}
+.nbtn:hover:not(:disabled){border-color:var(--steam);color:var(--steam)}
+.nbtn:disabled{opacity:.2;cursor:not-allowed}
+.nbtn.pri{background:var(--steam);color:#0a0e18;border-color:var(--steam);font-weight:700}
+.ninfo{text-align:center;font-family:var(--M);font-size:.7rem;color:var(--muted)}
+.ninfo span{color:var(--steam)}
+.ey{font-family:var(--M);font-size:.65rem;letter-spacing:3px;color:var(--steam);text-transform:uppercase;margin-bottom:10px}
+.pt{font-family:var(--H);font-size:clamp(2rem,5vw,3.8rem);font-weight:700;color:var(--white);line-height:1.05;margin-bottom:12px}
+.pt em{color:var(--steam);font-style:normal}
+.lead{font-size:1rem;color:var(--text);line-height:1.7;max-width:680px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--steam),transparent)}
+.card.gc::before{background:linear-gradient(90deg,var(--cond),transparent)}
+.card.gt::before{background:linear-gradient(90deg,var(--thermo),transparent)}
+.ci{font-size:2rem;margin-bottom:8px}
+.ct{font-family:var(--H);font-size:1.25rem;color:var(--white);margin-bottom:8px}
+.cb{font-size:.9rem;line-height:1.6;color:var(--text)}
+.cb strong{color:var(--white)}
+.cbox{border-radius:10px;padding:14px 18px;font-size:.92rem;line-height:1.65;border-left:4px solid;margin-top:14px}
+.cbox.b{background:rgba(79,195,247,.08);border-color:var(--steam);color:var(--white)}
+.cbox.g{background:rgba(105,255,176,.08);border-color:var(--cond);color:var(--white)}
+.cbox.o{background:rgba(255,179,71,.08);border-color:var(--thermo);color:var(--white)}
+.cbox strong{font-weight:700;color:var(--steam)}
+.cbox.g strong{color:var(--cond)}
+.cbox.o strong{color:var(--thermo)}
+.sec{display:flex;align-items:center;gap:10px;font-family:var(--M);font-size:.62rem;letter-spacing:3px;color:var(--steam);margin:18px 0 12px}
+.sec::before,.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.sn{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--H);font-size:1rem;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--steam),#0369a1)}
+.st{font-family:var(--H);font-size:1rem;color:var(--white);margin-bottom:4px}
+.sd{font-size:.87rem;line-height:1.55;color:var(--text)}
+.svgbox{background:#0d1526;border:1px solid var(--border);border-radius:12px;padding:14px;overflow:hidden}
+.svgt{font-family:var(--M);font-size:.62rem;letter-spacing:2px;color:var(--steam);margin-bottom:10px}
+.stats{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px}
+.stat{flex:1;padding:14px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.sv{font-family:var(--H);font-size:2rem;font-weight:700;color:var(--steam);display:block}
+.sl{font-size:.72rem;color:var(--muted);margin-top:3px;line-height:1.3}
+.sema{display:flex;flex-direction:column;gap:8px}
+.srow{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:10px;padding:12px 14px;border-left:5px solid transparent}
+.srow.ok{border-left-color:var(--ok)}
+.srow.wa{border-left-color:var(--thermo)}
+.srow.da{border-left-color:var(--warn)}
+.dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.srow.ok .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.srow.wa .dot{background:var(--thermo);animation:bl 1.2s ease-in-out infinite}
+.srow.da .dot{background:var(--warn);animation:bl .7s ease-in-out infinite}
+.stx{flex:1}
+.sti{font-family:var(--H);font-size:.95rem;color:var(--white)}
+.sde{font-size:.78rem;color:var(--muted);margin-top:2px}
+.sva{font-family:var(--M);font-size:.88rem;font-weight:700}
+.srow.ok .sva{color:var(--ok)}
+.srow.wa .sva{color:var(--thermo)}
+.srow.da .sva{color:var(--warn)}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes rspin{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ripple{0%{r:4;opacity:.9}100%{r:22;opacity:0}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+.fs{stroke:var(--steam);stroke-width:3.5;fill:none;stroke-dasharray:8 4;animation:fr .65s linear infinite;filter:drop-shadow(0 0 5px var(--steam))}
+.fsd{stroke:var(--steam);stroke-width:3;fill:none;stroke-dasharray:8 4;animation:fd .65s linear infinite;filter:drop-shadow(0 0 4px var(--steam))}
+.fcd{stroke:var(--cond);stroke-width:2.5;fill:none;stroke-dasharray:6 4;animation:fd 1s linear infinite;filter:drop-shadow(0 0 4px var(--cond))}
+.fcu{stroke:var(--cond);stroke-width:2;fill:none;stroke-dasharray:5 3;animation:fu 1.2s linear infinite;filter:drop-shadow(0 0 3px var(--cond))}
+.ftd{stroke:var(--thermo);stroke-width:3;fill:none;stroke-dasharray:7 3;animation:fd .8s linear infinite;filter:drop-shadow(0 0 5px var(--thermo))}
+@keyframes fr{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+@keyframes fd{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+@keyframes fu{from{stroke-dashoffset:0}to{stroke-dashoffset:24}}
+@keyframes fl{from{stroke-dashoffset:0}to{stroke-dashoffset:24}}
+/* AI */
+.aih{padding:18px 20px 12px;flex-shrink:0}
+.aib{display:inline-flex;align-items:center;gap:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:3px 11px;font-family:var(--M);font-size:.62rem;color:#a78bfa;margin-bottom:10px}
+.aib::before{content:'';width:7px;height:7px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa;animation:bl 1.5s ease-in-out infinite}
+.ait{font-family:var(--H);font-size:clamp(1.6rem,3.5vw,2.4rem);color:var(--white);margin-bottom:4px}
+.ait em{color:#a78bfa;font-style:normal}
+.log{flex:1;overflow-y:auto;padding:8px 20px 14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:fi .3s ease}
+.msg.u{flex-direction:row-reverse}
+.av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.msg.a .av{background:linear-gradient(135deg,#6d28d9,#4c1d95);border:1px solid rgba(167,139,250,.4)}
+.msg.u .av{background:linear-gradient(135deg,#1e3050,#0d1a2e);border:1px solid var(--border)}
+.bub{max-width:80%;padding:11px 15px;border-radius:12px;font-size:.92rem;line-height:1.65}
+.msg.a .bub{background:var(--panel);border:1px solid var(--border);color:var(--white);border-top-left-radius:4px}
+.msg.u .bub{background:linear-gradient(135deg,#1a2d4a,#0f1e30);border:1px solid rgba(79,195,247,.2);color:var(--text);border-top-right-radius:4px}
+.bub strong{color:#c4b5fd}
+.typing{display:flex;gap:5px;padding:11px 15px;background:var(--panel);border:1px solid var(--border);border-radius:12px;border-top-left-radius:4px;width:fit-content}
+.typing span{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:bounce .9s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+.qs{flex-shrink:0;padding:0 20px 12px}
+.ql{font-family:var(--M);font-size:.62rem;color:var(--muted);letter-spacing:2px;margin-bottom:8px}
+.qr{display:flex;flex-wrap:wrap;gap:7px}
+.qb{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.22);border-radius:18px;color:#c4b5fd;font-family:var(--B);font-size:.8rem;padding:6px 13px;cursor:pointer;transition:all .2s}
+.qb:hover{background:rgba(167,139,250,.18);color:var(--white)}
+.inp{flex-shrink:0;background:rgba(10,14,24,.98);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:9px;align-items:flex-end}
+.ci2{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--white);font-family:var(--B);font-size:.93rem;resize:none;min-height:42px;max-height:120px;outline:none;transition:border-color .2s;line-height:1.5}
+.ci2:focus{border-color:rgba(167,139,250,.5)}
+.ci2::placeholder{color:var(--muted)}
+.sb{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb:disabled{opacity:.35;cursor:not-allowed}
+.mt{margin-top:14px}
+.an{background:linear-gradient(135deg,rgba(79,195,247,.08),rgba(79,195,247,.03));border:1px solid rgba(79,195,247,.22);border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-top:14px}
+.an .em{font-size:2rem;flex-shrink:0}
+.an p{font-size:.92rem;line-height:1.65;color:var(--white)}
+.an strong{color:var(--steam)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand">VAPOR</div>
+  <div id="navEl"></div>
+</nav>
+<div class="pbar"><div class="pfill" id="pf"></div></div>
+<div id="main">
+
+<div class="slide on" id="p1">
+  <div class="ey">Capacitación operarios · Sistema térmico</div>
+  <div class="pt">¿Para qué sirve<br>el <em>sistema de vapor</em>?</div>
+  <p class="lead">Antes de mirar el SCADA, entendé el concepto. Simple y directo.</p>
+  <div class="an"><div class="em">🍳</div><p>El papel sale de la máquina como una esponja mojada. Para secarlo pasa por encima de <strong>grandes cilindros metálicos calientes</strong>. ¿Qué los calienta? <strong>Vapor de agua a presión</strong> — igual que una olla a presión, pero mucho más grande.</p></div>
+  <div class="sec">LOS DOS PROTAGONISTAS</div>
+  <div class="g2">
+    <div class="card"><div class="ci">💨</div><div class="ct">El VAPOR</div><div class="cb">Llega caliente desde la caldera. Entra dentro de los cilindros, da su calor al papel, y cuando se enfría se convierte en agua. Esa conversión es el <strong>intercambio de calor</strong>.</div></div>
+    <div class="card gc"><div class="ci">💧</div><div class="ct">El CONDENSADO</div><div class="cb">Es el agua que queda cuando el vapor cedió su calor. No se tira — se <strong>recupera y vuelve a la caldera</strong>. Perder condensado es perder dinero.</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="sv">4</span><span class="sl">Baterías de cilindros</span></div>
+    <div class="stat"><span class="sv" style="color:var(--cond)">2</span><span class="sl">Cascada B2→B1</span></div>
+    <div class="stat"><span class="sv" style="color:var(--thermo)">2</span><span class="sl">Termocompresores B3/B4</span></div>
+    <div class="stat"><span class="sv" style="color:#a78bfa">~85%</span><span class="sl">Condensado recuperado</span></div>
+  </div>
+</div>
+
+<div class="slide" id="p2">
+  <div class="ey">Componente fundamental</div>
+  <div class="pt">El cilindro y<br>el <em>sifón</em></div>
+  <p class="lead">El sifón es la pieza clave que mantiene el sistema vivo.</p>
+  <div class="g2 mt">
+    <div class="svgbox">
+      <div class="svgt">▶ CORTE DEL CILINDRO</div>
+      <svg viewBox="0 0 360 330" width="100%" style="display:block">
+        <defs>
+          <radialGradient id="cg"><stop offset="0%" stop-color="#0a2040"/><stop offset="100%" stop-color="#04111f"/></radialGradient>
+          <radialGradient id="sg" cx="50%" cy="25%" r="65%"><stop offset="0%" stop-color="rgba(79,195,247,.3)"/><stop offset="100%" stop-color="rgba(79,195,247,.04)"/></radialGradient>
+          <radialGradient id="wg" cx="50%" cy="80%" r="40%"><stop offset="0%" stop-color="rgba(105,255,176,.5)"/><stop offset="100%" stop-color="rgba(105,255,176,.08)"/></radialGradient>
+          <clipPath id="cc"><circle cx="180" cy="168" r="118"/></clipPath>
+          <marker id="ms" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#4fc3f7"/></marker>
+          <marker id="mc" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#69ffb0"/></marker>
+        </defs>
+        <g style="animation:spin 8s linear infinite;transform-origin:180px 168px"><circle cx="180" cy="168" r="121" fill="none" stroke="#1e3050" stroke-width="1" stroke-dasharray="5 10" opacity=".6"/></g>
+        <circle cx="180" cy="168" r="118" fill="url(#cg)" stroke="#4fc3f7" stroke-width="2.5"/>
+        <circle cx="180" cy="168" r="116" fill="url(#sg)" clip-path="url(#cc)"/>
+        <ellipse cx="180" cy="262" rx="72" ry="18" fill="url(#wg)"/>
+        <text x="180" y="268" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#69ffb0">AGUA (CONDENSADO)</text>
+        <circle cx="148" cy="185" r="5" fill="none" stroke="#4fc3f7" stroke-width="1.2" style="animation:ripple 2.5s ease-out infinite;opacity:.7"/>
+        <circle cx="205" cy="155" r="4" fill="none" stroke="#4fc3f7" stroke-width="1" style="animation:ripple 2.5s ease-out infinite .8s;opacity:.6"/>
+        <rect x="176" y="55" width="8" height="198" rx="3" fill="#2a4a6a" stroke="#6b8aaa" stroke-width="1"/>
+        <path d="M 180 255 L 180 75" stroke="#69ffb0" stroke-width="3" fill="none" stroke-dasharray="5 5" style="animation:fu 1.3s linear infinite;filter:drop-shadow(0 0 4px #69ffb0)" opacity=".85"/>
+        <line x1="188" y1="168" x2="225" y2="168" stroke="#6b8aaa" stroke-width="1" stroke-dasharray="3 2"/>
+        <rect x="225" y="158" width="50" height="20" rx="4" fill="#0d1526" stroke="#6b8aaa" stroke-width="1"/>
+        <text x="250" y="171" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#8baaba" font-weight="700">SIFÓN</text>
+        <path d="M 38 168 L 60 168" class="fs" stroke-width="3" marker-end="url(#ms)"/>
+        <rect x="5" y="154" width="45" height="28" rx="6" fill="#061228" stroke="#4fc3f7" stroke-width="1.5"/>
+        <text x="27" y="166" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4fc3f7" font-weight="700">VAPOR</text>
+        <text x="27" y="177" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4fc3f7">entrada</text>
+        <path d="M 180 55 L 180 15" class="fcu" stroke-width="2.5" marker-end="url(#mc)"/>
+        <rect x="112" y="4" width="136" height="16" rx="5" fill="#061228" stroke="#69ffb0" stroke-width="1.5"/>
+        <text x="180" y="15" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#69ffb0" font-weight="700">CONDENSADO → SEPARADOR</text>
+        <path d="M 10 50 Q 180 10 350 50" stroke="#f59e0b" stroke-width="3.5" fill="none"/>
+        <text x="300" y="44" font-family="Oswald" font-size="11" fill="#f59e0b" font-weight="700">📄 PAPEL</text>
+        <text x="110" y="40" font-size="15" fill="#ff9f43" style="animation:bob 1.8s ease-in-out infinite">↑</text>
+        <text x="180" y="28" font-size="15" fill="#ff9f43" style="animation:bob 1.8s ease-in-out infinite .6s">↑</text>
+        <text x="250" y="40" font-size="15" fill="#ff9f43" style="animation:bob 1.8s ease-in-out infinite 1.2s">↑</text>
+        <text x="180" y="300" text-anchor="middle" font-family="Oswald" font-size="11" fill="#6c7a96" letter-spacing="3">CILINDRO SECADOR</text>
+      </svg>
+    </div>
+    <div>
+      <div class="sec" style="margin-top:0">QUÉ PASA ADENTRO</div>
+      <div class="steps">
+        <div class="step"><div class="sn">1</div><div><div class="st">El vapor llena el interior</div><div class="sd">Vapor a presión entra por el eje. La pared se calienta hasta ~130°C.</div></div></div>
+        <div class="step"><div class="sn">2</div><div><div class="st">Cede calor al papel</div><div class="sd">El calor pasa por la pared hacia el papel. El vapor se enfría y se convierte en agua — eso es condensar.</div></div></div>
+        <div class="step"><div class="sn">3</div><div><div class="st">El sifón aspira el agua del fondo</div><div class="sd">La presión interior chupa el agua hacia afuera mientras el cilindro gira. <strong>Sin sifón el papel sale húmedo.</strong></div></div></div>
+        <div class="step"><div class="sn">4</div><div><div class="st">Sale condensado + blow-through</div><div class="sd">Van juntos al separador del grupo.</div></div></div>
+      </div>
+      <div class="cbox g"><strong>Crítico:</strong> Si el sifón no extrae el agua, se forma una capa fría que crea zonas húmedas en el papel.</div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="p3">
+  <div class="ey">Baterías 1 y 2</div>
+  <div class="pt">La cascada:<br><em>B2 alimenta a B1</em></div>
+  <p class="lead">El vapor "usado" de B2 se manda a B1 para que siga trabajando. El mismo vapor hace dos turnos.</p>
+  <div class="an mt"><div class="em">🚿</div><p>El vapor que sobra en la cocina (B2) todavía tiene energía y lo usás para calentar el baño (B1). <strong>Un recurso, dos usos.</strong></p></div>
+  <div class="svgbox mt">
+    <div class="svgt">▶ CASCADA B2 → B1</div>
+    <svg viewBox="0 0 860 360" width="100%" style="display:block;font-family:'Oswald',sans-serif">
+      <defs>
+        <marker id="As" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#4fc3f7"/></marker>
+        <marker id="Ac" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#69ffb0"/></marker>
+        <marker id="Ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#a78bfa"/></marker>
+        <linearGradient id="B1g" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0a1e36"/><stop offset="100%" stop-color="#05111f"/></linearGradient>
+        <linearGradient id="B2g" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#201200"/><stop offset="100%" stop-color="#110900"/></linearGradient>
+      </defs>
+      <rect x="12" y="75" width="80" height="65" rx="10" fill="#071628" stroke="#4fc3f7" stroke-width="2"/>
+      <text x="52" y="100" text-anchor="middle" font-size="20">🏭</text>
+      <text x="52" y="120" text-anchor="middle" font-size="12" fill="#4fc3f7" font-weight="700">CALDERA</text>
+      <path d="M 92 107 L 830 107" class="fs" stroke-width="4" marker-end="url(#As)"/>
+      <path d="M 514 107 L 514 178" class="fsd" stroke-width="4" marker-end="url(#As)"/>
+      <rect x="405" y="178" width="218" height="80" rx="12" fill="url(#B2g)" stroke="#f59e0b" stroke-width="2.5"/>
+      <text x="514" y="210" text-anchor="middle" font-size="17" fill="#f59e0b" font-weight="700">BATERÍA 2</text>
+      <text x="514" y="228" text-anchor="middle" font-size="10" fill="#f59e0b" opacity=".75">Alta Presión</text>
+      <g opacity=".5"><circle cx="445" cy="244" r="11" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3" style="animation:spin 6s linear infinite;transform-origin:445px 244px"/><circle cx="475" cy="244" r="11" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3" style="animation:rspin 6s linear infinite;transform-origin:475px 244px"/><circle cx="553" cy="244" r="11" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3" style="animation:spin 6s linear infinite;transform-origin:553px 244px"/><circle cx="583" cy="244" r="11" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3" style="animation:rspin 6s linear infinite;transform-origin:583px 244px"/></g>
+      <path d="M 405 215 L 290 215" class="fs" stroke-width="3" marker-end="url(#As)" style="animation-name:fl;animation-duration:.85s"/>
+      <rect x="193" y="204" width="100" height="24" rx="6" fill="#061228" stroke="#4fc3f7" stroke-width="1"/>
+      <text x="243" y="214" text-anchor="middle" font-size="10" fill="#4fc3f7" font-weight="700">BLOW-THRU</text>
+      <text x="243" y="224" text-anchor="middle" font-size="9" fill="#6c7a96">vapor sobrante B2</text>
+      <path d="M 193 215 L 62 215 L 62 198" stroke="#4fc3f7" stroke-width="2.5" fill="none" stroke-dasharray="7 4" style="animation:fl .8s linear infinite;filter:drop-shadow(0 0 4px #4fc3f7)" marker-end="url(#As)"/>
+      <rect x="55" y="178" width="200" height="80" rx="12" fill="url(#B1g)" stroke="#4fc3f7" stroke-width="2"/>
+      <text x="155" y="210" text-anchor="middle" font-size="17" fill="#4fc3f7" font-weight="700">BATERÍA 1</text>
+      <text x="155" y="228" text-anchor="middle" font-size="10" fill="#4fc3f7" opacity=".75">Baja Presión · Cascada</text>
+      <g opacity=".5"><circle cx="95" cy="244" r="10" fill="none" stroke="#4fc3f7" stroke-width="1.2" stroke-dasharray="3 3" style="animation:spin 7s linear infinite;transform-origin:95px 244px"/><circle cx="120" cy="244" r="10" fill="none" stroke="#4fc3f7" stroke-width="1.2" stroke-dasharray="3 3" style="animation:rspin 7s linear infinite;transform-origin:120px 244px"/><circle cx="190" cy="244" r="10" fill="none" stroke="#4fc3f7" stroke-width="1.2" stroke-dasharray="3 3" style="animation:spin 7s linear infinite;transform-origin:190px 244px"/><circle cx="215" cy="244" r="10" fill="none" stroke="#4fc3f7" stroke-width="1.2" stroke-dasharray="3 3" style="animation:rspin 7s linear infinite;transform-origin:215px 244px"/></g>
+      <path d="M 26 172 L 255 172 L 405 172 L 624 172" stroke="#f59e0b" stroke-width="3" fill="none"/>
+      <rect x="65" y="285" width="180" height="34" rx="8" fill="#051020" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="155" y="305" text-anchor="middle" font-size="11" fill="#69ffb0" font-weight="700">SEPARADOR B1</text>
+      <path d="M 155 258 L 155 285" class="fcd" stroke-width="2" marker-end="url(#Ac)"/>
+      <rect x="424" y="285" width="180" height="34" rx="8" fill="#051020" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="514" y="305" text-anchor="middle" font-size="11" fill="#69ffb0" font-weight="700">SEPARADOR B2</text>
+      <path d="M 514 258 L 514 285" class="fcd" stroke-width="2" marker-end="url(#Ac)"/>
+      <path d="M 155 319 L 155 345 L 514 345 L 514 319" stroke="#a78bfa" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation:fl 1.7s linear infinite;filter:drop-shadow(0 0 3px #a78bfa)"/>
+      <path d="M 334 345 L 52 345 L 52 140" stroke="#a78bfa" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation:fl 1.7s linear infinite;filter:drop-shadow(0 0 3px #a78bfa)" marker-end="url(#Ar)"/>
+      <rect x="195" y="337" width="220" height="14" rx="4" fill="#0a0e18" opacity=".9"/>
+      <text x="305" y="348" text-anchor="middle" font-size="9" fill="#a78bfa" font-weight="700">♻ CONDENSADO → CALDERA</text>
+    </svg>
+  </div>
+  <div class="g2 mt">
+    <div class="cbox b"><strong>Blow-through:</strong> vapor sobrante de B2 con energía residual que se manda a B1 en lugar de tirarlo.</div>
+    <div class="cbox o"><strong>El ΔP es clave:</strong> B1 siempre tiene que estar a menor presión que B2 para que el vapor fluya.</div>
+  </div>
+</div>
+
+<div class="slide" id="p4">
+  <div class="ey">Baterías 3 y 4</div>
+  <div class="pt">El termocompresor:<br><em>recupera su propio vapor</em></div>
+  <p class="lead">B3 y B4 usan un termocompresor para recuperar el vapor flash de su propio separador.</p>
+  <div class="an mt"><div class="em">🌀</div><p>Un chorro de vapor a alta presión crea un vacío que aspira vapor de baja presión, los mezcla, y el resultado vuelve a los cilindros. <strong>Sin partes móviles. Sin electricidad.</strong></p></div>
+  <div class="g2 mt">
+    <div class="steps">
+      <div class="step" style="border-color:rgba(255,179,71,.25)"><div class="sn" style="background:linear-gradient(135deg,var(--thermo),#c05000)">1</div><div><div class="st">Entra vapor motriz (alta P)</div><div class="sd">El vapor del colector entra a la tobera, se acelera y crea zona de baja presión.</div></div></div>
+      <div class="step" style="border-color:rgba(255,179,71,.25)"><div class="sn" style="background:linear-gradient(135deg,var(--thermo),#c05000)">2</div><div><div class="st">Aspira el vapor flash</div><div class="sd">La baja presión chupa el vapor del separador que normalmente se perdería a la atmósfera.</div></div></div>
+      <div class="step" style="border-color:rgba(255,179,71,.25)"><div class="sn" style="background:linear-gradient(135deg,var(--thermo),#c05000)">3</div><div><div class="st">Salen mezclados a presión media</div><div class="sd">Suficiente para volver a los cilindros y seguir trabajando.</div></div></div>
+      <div class="step" style="border-color:rgba(255,179,71,.25)"><div class="sn" style="background:linear-gradient(135deg,var(--thermo),#c05000)">4</div><div><div class="st">Señal de alerta</div><div class="sd">Si el separador de B3 o B4 sube de nivel y presión — el TC puede no estar aspirando. Avisá al supervisor.</div></div></div>
+    </div>
+    <div class="cbox o mt"><strong>¿Cómo sabés que anda bien?</strong><br><br>✅ Nivel separador entre 30-70%<br>✅ Presión separador estable<br>✅ No se ve vapor escapando al ambiente<br><br>Si el nivel sube solo y la presión sube — el TC no está aspirando.</div>
+  </div>
+</div>
+
+<div class="slide" id="p5">
+  <div class="ey">Vista general</div>
+  <div class="pt">El sistema<br><em>completo en movimiento</em></div>
+  <p class="lead">Las 4 baterías, la cascada, los termocompresores y el retorno a caldera — todo junto.</p>
+  <div class="svgbox mt">
+    <div class="svgt">▶ SISTEMA COMPLETO</div>
+    <svg viewBox="0 0 1020 460" width="100%" style="display:block;font-family:'Oswald',sans-serif">
+      <defs>
+        <marker id="MS" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#4fc3f7"/></marker>
+        <marker id="MC" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#69ffb0"/></marker>
+        <marker id="MT" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#ffb347"/></marker>
+        <marker id="MR" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#a78bfa"/></marker>
+        <linearGradient id="lB1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#081828"/><stop offset="100%" stop-color="#040e18"/></linearGradient>
+        <linearGradient id="lB2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#201200"/><stop offset="100%" stop-color="#0e0800"/></linearGradient>
+        <linearGradient id="lB34" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1a0800"/><stop offset="100%" stop-color="#100500"/></linearGradient>
+      </defs>
+      <rect x="10" y="70" width="76" height="58" rx="10" fill="#061628" stroke="#4fc3f7" stroke-width="2"/>
+      <text x="48" y="94" text-anchor="middle" font-size="18">🏭</text>
+      <text x="48" y="114" text-anchor="middle" font-size="11" fill="#4fc3f7" font-weight="700">CALDERA</text>
+      <path d="M 86 99 L 990 99" class="fs" stroke-width="4" marker-end="url(#MS)"/>
+      <path d="M 24 158 L 1000 158" stroke="#f59e0b" stroke-width="3" fill="none"/>
+      <text x="978" y="152" font-size="9" fill="#f59e0b" font-weight="700">📄</text>
+      <path d="M 144 99 L 144 164" class="fsd" stroke-width="3" marker-end="url(#MS)"/>
+      <rect x="58" y="164" width="172" height="70" rx="10" fill="url(#lB1)" stroke="#4fc3f7" stroke-width="2"/>
+      <text x="144" y="194" text-anchor="middle" font-size="15" fill="#4fc3f7" font-weight="700">BATERÍA 1</text>
+      <text x="144" y="210" text-anchor="middle" font-size="9" fill="#4fc3f7" opacity=".7">Baja Presión · Cascada</text>
+      <g opacity=".4"><circle cx="90" cy="224" r="9" fill="none" stroke="#4fc3f7" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 8s linear infinite;transform-origin:90px 224px"/><circle cx="113" cy="224" r="9" fill="none" stroke="#4fc3f7" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 8s linear infinite;transform-origin:113px 224px"/><circle cx="175" cy="224" r="9" fill="none" stroke="#4fc3f7" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 8s linear infinite;transform-origin:175px 224px"/><circle cx="198" cy="224" r="9" fill="none" stroke="#4fc3f7" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 8s linear infinite;transform-origin:198px 224px"/></g>
+      <rect x="68" y="258" width="152" height="30" rx="7" fill="#040e18" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="144" y="277" text-anchor="middle" font-size="10" fill="#69ffb0" font-weight="700">SEP. B1</text>
+      <path d="M 144 234 L 144 258" class="fcd" stroke-width="2" marker-end="url(#MC)"/>
+      <circle cx="144" cy="306" r="12" fill="#0d1526" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="144" y="303" text-anchor="middle" font-size="7" fill="#69ffb0" font-weight="700">BC-1</text>
+      <text x="144" y="312" text-anchor="middle" font-size="6" fill="#69ffb0">BOMBA</text>
+      <path d="M 144 288 L 144 294" class="fcd" stroke-width="1.5" marker-end="url(#MC)"/>
+      <path d="M 336 99 L 336 164" class="fsd" stroke-width="3" marker-end="url(#MS)"/>
+      <rect x="250" y="164" width="172" height="70" rx="10" fill="url(#lB2)" stroke="#f59e0b" stroke-width="2"/>
+      <text x="336" y="194" text-anchor="middle" font-size="15" fill="#f59e0b" font-weight="700">BATERÍA 2</text>
+      <text x="336" y="210" text-anchor="middle" font-size="9" fill="#f59e0b" opacity=".7">Alta Presión → B1</text>
+      <g opacity=".4"><circle cx="286" cy="224" r="9" fill="none" stroke="#f59e0b" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:286px 224px"/><circle cx="309" cy="224" r="9" fill="none" stroke="#f59e0b" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:309px 224px"/><circle cx="363" cy="224" r="9" fill="none" stroke="#f59e0b" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:363px 224px"/><circle cx="386" cy="224" r="9" fill="none" stroke="#f59e0b" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:386px 224px"/></g>
+      <path d="M 250 202 L 230 202" class="fs" stroke-width="2.5" marker-end="url(#MS)" style="animation-name:fl;animation-duration:.85s"/>
+      <path d="M 186 202 L 60 202 L 60 184" stroke="#4fc3f7" stroke-width="2" fill="none" stroke-dasharray="7 4" style="animation:fl .8s linear infinite;filter:drop-shadow(0 0 4px #4fc3f7)" marker-end="url(#MS)"/>
+      <rect x="250" y="258" width="152" height="30" rx="7" fill="#040e18" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="336" y="277" text-anchor="middle" font-size="10" fill="#69ffb0" font-weight="700">SEP. B2</text>
+      <path d="M 336 234 L 336 258" class="fcd" stroke-width="2" marker-end="url(#MC)"/>
+      <circle cx="336" cy="306" r="12" fill="#0d1526" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="336" y="303" text-anchor="middle" font-size="7" fill="#69ffb0" font-weight="700">BC-2</text>
+      <text x="336" y="312" text-anchor="middle" font-size="6" fill="#69ffb0">BOMBA</text>
+      <path d="M 336 288 L 336 294" class="fcd" stroke-width="1.5" marker-end="url(#MC)"/>
+      <path d="M 586 99 L 586 164" class="ftd" stroke-width="3" marker-end="url(#MT)"/>
+      <rect x="500" y="164" width="172" height="70" rx="10" fill="url(#lB34)" stroke="#ffb347" stroke-width="2"/>
+      <text x="586" y="194" text-anchor="middle" font-size="15" fill="#ffb347" font-weight="700">BATERÍA 3</text>
+      <text x="586" y="210" text-anchor="middle" font-size="9" fill="#ffb347" opacity=".7">+ Termocompresor</text>
+      <g opacity=".4"><circle cx="536" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:536px 224px"/><circle cx="559" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:559px 224px"/><circle cx="613" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:613px 224px"/><circle cx="636" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:636px 224px"/></g>
+      <rect x="510" y="258" width="152" height="30" rx="7" fill="#100500" stroke="#ffb347" stroke-width="1.5"/>
+      <text x="586" y="277" text-anchor="middle" font-size="10" fill="#ffb347" font-weight="700">SEP. B3</text>
+      <path d="M 586 234 L 586 258" class="fcd" stroke-width="2" marker-end="url(#MC)"/>
+      <path d="M 500 268 L 472 268 L 472 130" stroke="#ffb347" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation-name:fu;animation-duration:.9s;animation-iteration-count:infinite;animation-timing-function:linear;filter:drop-shadow(0 0 4px #ffb347)" marker-end="url(#MT)"/>
+      <path d="M 452 108 L 496 122 L 496 140 L 452 126 Z" fill="#1a0800" stroke="#ffb347" stroke-width="1.8"/>
+      <text x="474" y="128" text-anchor="middle" font-size="8" fill="#ffb347" font-weight="700">TC-B3</text>
+      <path d="M 496 132 L 534 132 L 534 164" stroke="#ffe0a0" stroke-width="2" fill="none" stroke-dasharray="5 3" style="animation:fr .9s linear infinite;filter:drop-shadow(0 0 4px #ffe0a0)" marker-end="url(#MT)"/>
+      <circle cx="586" cy="306" r="12" fill="#0d1526" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="586" y="303" text-anchor="middle" font-size="7" fill="#69ffb0" font-weight="700">BC-3</text>
+      <text x="586" y="312" text-anchor="middle" font-size="6" fill="#69ffb0">BOMBA</text>
+      <path d="M 586 288 L 586 294" class="fcd" stroke-width="1.5" marker-end="url(#MC)"/>
+      <path d="M 836 99 L 836 164" class="ftd" stroke-width="3" marker-end="url(#MT)"/>
+      <rect x="750" y="164" width="172" height="70" rx="10" fill="url(#lB34)" stroke="#ffb347" stroke-width="2"/>
+      <text x="836" y="194" text-anchor="middle" font-size="15" fill="#ffb347" font-weight="700">BATERÍA 4</text>
+      <text x="836" y="210" text-anchor="middle" font-size="9" fill="#ffb347" opacity=".7">+ Termocompresor</text>
+      <g opacity=".4"><circle cx="786" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:786px 224px"/><circle cx="809" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:809px 224px"/><circle cx="863" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:spin 7s linear infinite;transform-origin:863px 224px"/><circle cx="886" cy="224" r="9" fill="none" stroke="#ffb347" stroke-dasharray="3 2" stroke-width="1" style="animation:rspin 7s linear infinite;transform-origin:886px 224px"/></g>
+      <rect x="760" y="258" width="152" height="30" rx="7" fill="#100500" stroke="#ffb347" stroke-width="1.5"/>
+      <text x="836" y="277" text-anchor="middle" font-size="10" fill="#ffb347" font-weight="700">SEP. B4</text>
+      <path d="M 836 234 L 836 258" class="fcd" stroke-width="2" marker-end="url(#MC)"/>
+      <path d="M 750 268 L 720 268 L 720 130" stroke="#ffb347" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation-name:fu;animation-duration:.9s;animation-iteration-count:infinite;animation-timing-function:linear;filter:drop-shadow(0 0 4px #ffb347);animation-delay:.4s" marker-end="url(#MT)"/>
+      <path d="M 700 108 L 744 122 L 744 140 L 700 126 Z" fill="#1a0800" stroke="#ffb347" stroke-width="1.8"/>
+      <text x="722" y="128" text-anchor="middle" font-size="8" fill="#ffb347" font-weight="700">TC-B4</text>
+      <path d="M 744 132 L 784 132 L 784 164" stroke="#ffe0a0" stroke-width="2" fill="none" stroke-dasharray="5 3" style="animation:fr .9s linear infinite .4s;filter:drop-shadow(0 0 4px #ffe0a0)" marker-end="url(#MT)"/>
+      <circle cx="836" cy="306" r="12" fill="#0d1526" stroke="#69ffb0" stroke-width="1.5"/>
+      <text x="836" y="303" text-anchor="middle" font-size="7" fill="#69ffb0" font-weight="700">BC-4</text>
+      <text x="836" y="312" text-anchor="middle" font-size="6" fill="#69ffb0">BOMBA</text>
+      <path d="M 836 288 L 836 294" class="fcd" stroke-width="1.5" marker-end="url(#MC)"/>
+      <path d="M 144 318 L 144 360 L 836 360 L 836 318" stroke="#a78bfa" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation:fl 1.8s linear infinite;filter:drop-shadow(0 0 3px #a78bfa)"/>
+      <path d="M 490 360 L 47 360 L 47 128" stroke="#a78bfa" stroke-width="2" fill="none" stroke-dasharray="6 3" style="animation:fl 1.8s linear infinite;filter:drop-shadow(0 0 3px #a78bfa)" marker-end="url(#MR)"/>
+      <rect x="355" y="352" width="220" height="14" rx="4" fill="#0a0e18" opacity=".95"/>
+      <text x="465" y="363" text-anchor="middle" font-size="9" fill="#a78bfa" font-weight="700">♻ CONDENSADO → RETORNO CALDERA</text>
+    </svg>
+  </div>
+</div>
+
+<div class="slide" id="p6">
+  <div class="ey">Resumen operativo</div>
+  <div class="pt">Lo que necesitás<br><em>saber en el turno</em></div>
+  <div class="sec">SEMÁFORO DE OPERACIÓN</div>
+  <div class="sema">
+    <div class="srow ok"><div class="dot"></div><div class="stx"><div class="sti">Presión estable, válvula PV entre 20% y 80%</div><div class="sde">Control automático regulando bien.</div></div><div class="sva">NORMAL</div></div>
+    <div class="srow ok"><div class="dot"></div><div class="stx"><div class="sti">Niveles de separadores entre 30% y 70%</div><div class="sde">Bombas BC extrayendo bien.</div></div><div class="sva">NORMAL</div></div>
+    <div class="srow wa"><div class="dot"></div><div class="stx"><div class="sti">Válvula PV al 90-100% y presión sigue baja</div><div class="sde">¿Bajó la caldera? ¿Hay fuga? Avisar al supervisor.</div></div><div class="sva">AVISAR</div></div>
+    <div class="srow wa"><div class="dot"></div><div class="stx"><div class="sti">Nivel separador entre 70% y 85% subiendo</div><div class="sde">Verificar que la bomba BC esté corriendo.</div></div><div class="sva">VIGILAR</div></div>
+    <div class="srow da"><div class="dot"></div><div class="stx"><div class="sti">Nivel separador por encima del 85-90%</div><div class="sde">Riesgo de golpe de ariete. Actuar de inmediato.</div></div><div class="sva">URGENTE</div></div>
+    <div class="srow da"><div class="dot"></div><div class="stx"><div class="sti">Golpes secos en los caños (martillazos)</div><div class="sde">Agua líquida en línea de vapor. Parar y avisar.</div></div><div class="sva">PARAR</div></div>
+  </div>
+</div>
+
+<div class="slide" id="p7">
+  <div class="aih">
+    <div class="aib">IA ACTIVA</div>
+    <div class="ait">Consultas al <em>Asistente de Vapor</em></div>
+    <p style="font-size:.88rem;color:var(--muted)">Hacé cualquier pregunta sobre el sistema de vapor y condensado.</p>
+  </div>
+  <div class="log" id="log"></div>
+  <div class="qs" id="qs">
+    <div class="ql">PREGUNTAS FRECUENTES</div>
+    <div class="qr" id="qr"></div>
+  </div>
+  <div class="inp">
+    <textarea class="ci2" id="ci" placeholder="Escribí tu consulta..." rows="1"></textarea>
+    <button class="sb" id="sb" onclick="send()">↑</button>
+  </div>
+</div>
+
+</div>
+<div id="botbar">
+  <button class="nbtn" id="bp" onclick="go(-1)" disabled>← ANTERIOR</button>
+  <div class="ninfo">MÓDULO <span id="cn">1</span> de <span id="ct">6</span></div>
+  <button class="nbtn pri" id="bn" onclick="go(1)">SIGUIENTE →</button>
+</div>
+<script>
+const KB=[
+  {k:['sifon','sifón','agua fondo','cilindro','papel humedo','húmedo','humedo'],r:'**¿Qué hace el sifón?**\n\nEl sifón es un tubo fijo dentro del cilindro que llega casi al fondo. La presión interior chupa el agua (condensado) hacia afuera mientras el cilindro gira.\n\n**Sin sifón:** el agua se acumula, enfría la pared y el papel sale húmedo con zonas irregulares.\n\n**Si el sifón está tapado:** la temperatura del cilindro baja aunque la presión esté bien. Avisá al supervisor.'},
+  {k:['papel humedo','papel húmedo','sale mojado','no seca','humedad papel'],r:'**¿Por qué el papel sale húmedo?**\n\nCausas más comunes:\n1. **Presión baja en la batería** → menos temperatura → menos secado\n2. **Sifón tapado** → agua acumulada enfría el cilindro\n3. **Válvula PV casi cerrada** → poco vapor entrando\n4. **Caldera con presión baja** → afecta todas las baterías\n\nRevisá la presión en el SCADA. Si está en setpoint y el papel igual sale húmedo, avisá al supervisor.'},
+  {k:['golpe ariete','martillazo','ruido caño','golpe caño','bang','ruido fuerte'],r:'**⚠️ GOLPE DE ARIETE — PELIGROSO**\n\nSe escucha como martillazos secos en los caños. Es agua líquida moviéndose a alta velocidad en una línea de vapor.\n\n**Qué hacer:**\n1. Avisá al supervisor DE INMEDIATO\n2. No toques ninguna válvula sin autorización\n3. Alejate de los caños afectados\n\nPuede dañar válvulas, caños y equipos. Es una emergencia.'},
+  {k:['termocompresor','tc','tc-b3','tc-b4','no aspira','aspira mal'],r:'**¿Cómo sé si el termocompresor funciona bien?**\n\n✅ Nivel separador entre 30-70%\n✅ Presión separador estable\n✅ No se ve vapor escapando al ambiente\n\n**Señales de que el TC NO aspira:**\n- Nivel del separador sube continuamente\n- Presión del separador sube\n- Vapor escapando al ambiente\n\n**Qué hacer:** avisá al supervisor. No ajustés el TC vos mismo.'},
+  {k:['separador','nivel separador','nivel alto','nivel bajo','nivel 80','nivel 90'],r:'**Niveles del separador:**\n\n✅ **30% a 70%** → Normal\n⚠️ **70% a 85% subiendo** → Verificá que la bomba BC esté corriendo\n🔴 **Más del 85-90%** → URGENTE, riesgo de golpe de ariete, avisá al supervisor\n⚠️ **Menos del 10%** → Puede entrar aire, avisá al supervisor'},
+  {k:['bomba','bc-1','bc-2','bc-3','bc-4','bomba condensado','bomba parada'],r:'**¿Qué pasa si la bomba BC se para?**\n\nEl nivel del separador sube rápidamente. Si supera el 85-90% hay riesgo de golpe de ariete y se pierde condensado caliente.\n\n**Qué hacer:**\n1. Verificá en campo si la bomba está encendida\n2. Revisá si hay alarma eléctrica\n3. Si no lo resolvés en 2 minutos, avisá al supervisor'},
+  {k:['condensado','recuperar condensado','retorno caldera','por que recuperar'],r:'**¿Por qué recuperar el condensado?**\n\nEl condensado es agua caliente ya tratada químicamente. Si se pierde:\n💧 Se desperdicia agua tratada\n🌡️ Se desperdicia calor\n💰 La caldera necesita más combustible\n\nEl sistema recupera ~85% del condensado. Si ves una pérdida, avisá al supervisor.'},
+  {k:['cascada','b2 b1','blow through','blow-through','baja presion','alta presion'],r:'**¿Qué es la cascada B2 → B1?**\n\nB2 trabaja a alta presión. El vapor sobrante de B2 (blow-through) tiene energía residual. En vez de tirarlo, se manda a B1 que trabaja a menor presión. El mismo vapor hace dos veces el trabajo.\n\nPara que funcione, B1 siempre tiene que estar a menor presión que B2.'},
+  {k:['presion','presion baja','presion alta','valvula pv','setpoint','sp'],r:'**Presión de las baterías:**\n\nMás presión = más temperatura = mejor secado.\n\n✅ **PV entre 20% y 80%** → control automático funcionando bien\n⚠️ **PV al 90-100% y presión sigue baja** → avisá al supervisor\n\nLa válvula PV regula automáticamente cuánto vapor entra a la batería.'},
+  {k:['caldera','presion caldera','caldera baja'],r:'**¿Qué pasa si la caldera baja presión?**\n\nTodas las baterías lo sienten al mismo tiempo — la caldera es la fuente de todo.\n\nSeñales:\n- Las 4 baterías bajan presión juntas\n- Las válvulas PV se abren al máximo\n- El papel empieza a salir húmedo en toda la máquina\n\nAvisá al supervisor y al operador de caldera de inmediato.'},
+  {k:['ronda','que mirar','checklist','que controlar','turno'],r:'**¿Qué controlás en cada ronda?**\n\n✅ Presiones de las 4 baterías dentro del setpoint\n✅ Niveles de los 4 separadores entre 30% y 70%\n✅ Bombas BC-1 a BC-4 corriendo\n✅ Presión de caldera estable\n✅ Ningún golpe ni vibración anormal en los caños\n✅ Válvulas PV en rango normal'},
+  {k:['avisar','cuando avisar','supervisor','emergencia'],r:'**¿Cuándo avisás al supervisor?**\n\n🔴 Inmediatamente:\n- Golpes secos en los caños\n- Nivel separador mayor al 85-90%\n- Pérdida de vapor o agua importante\n- Todas las baterías bajan presión juntas\n\n⚠️ Pronto:\n- Válvula PV al tope y presión sigue baja\n- Bomba BC que no arranca\n- Nivel 70-85% y sigue subiendo\n- TC de B3 o B4 que no aspira'},
+  {k:['vapor flash','flash','que es flash'],r:'**¿Qué es el vapor flash?**\n\nCuando el condensado caliente pasa al separador a menor presión, una parte se convierte instantáneamente en vapor. Ese es el vapor flash.\n\nEn B3 y B4, el termocompresor aspira ese vapor flash y lo reutiliza en lugar de perderlo a la atmósfera.'},
+];
+
+function responder(q){
+  const p=q.toLowerCase();
+  let mejor=null,max=0;
+  for(const i of KB){let s=0;for(const k of i.k)if(p.includes(k))s++;if(s>max){max=s;mejor=i;}}
+  return mejor&&max>0?mejor.r:'No tengo información específica sobre esa consulta.\n\nPodés usar términos como: sifón, separador, termocompresor, bomba BC, presión, nivel, golpe de ariete, blow-through, cascada.\n\nO consultá al supervisor si es una situación en curso.';
+}
+
+const pages=[{id:'p1',l:'¿Para qué sirve?'},{id:'p2',l:'Cilindro y sifón'},{id:'p3',l:'Cascada B2→B1'},{id:'p4',l:'Termocompresor B3/B4'},{id:'p5',l:'Sistema completo'},{id:'p6',l:'Resumen operativo'},{id:'p7',l:'🤖 Consultas IA',ai:true}];
+const slides=pages.map(p=>document.getElementById(p.id));
+const navEl=document.getElementById('navEl');
+const pf=document.getElementById('pf');
+const cn=document.getElementById('cn');
+const ct=document.getElementById('ct');
+const bp=document.getElementById('bp');
+const bn=document.getElementById('bn');
+const botbar=document.getElementById('botbar');
+const main=document.getElementById('main');
+let cur=0;
+ct.textContent=pages.length-1;
+
+const tabs=pages.map((p,i)=>{
+  const b=document.createElement('button');
+  b.className='ntab'+(i===0?' on':'')+(p.ai?' ai':'');
+  b.textContent=p.l;b.onclick=()=>goTo(i);
+  navEl.appendChild(b);return b;
+});
+
+const QS=['¿Qué hago si el nivel del separador de B3 sube mucho?','¿Por qué el papel sale húmedo si hay vapor?','¿Qué es el golpe de ariete?','¿Cómo sé si el termocompresor funciona bien?','¿Por qué recuperar el condensado?','¿Qué hace el sifón dentro del cilindro?','¿Cuándo aviso al supervisor?','¿Qué pasa si la bomba BC se para?'];
+const qr=document.getElementById('qr');
+QS.forEach(q=>{const b=document.createElement('button');b.className='qb';b.textContent=q;b.onclick=()=>{document.getElementById('ci').value=q;send();};qr.appendChild(b);});
+
+function goTo(n){
+  slides[cur].classList.remove('on');tabs[cur].classList.remove('on');
+  cur=n;slides[cur].classList.add('on');tabs[cur].classList.add('on');
+  tabs[cur].scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  const ai=pages[cur].ai;
+  botbar.style.display=ai?'none':'flex';
+  main.style.overflowY=ai?'hidden':'auto';
+  if(!ai){cn.textContent=cur+1;bp.disabled=cur===0;bn.textContent=cur===pages.length-2?'CONSULTAR IA 🤖':'SIGUIENTE →';pf.style.width=((cur+1)/(pages.length-1)*100)+'%';main.scrollTop=0;}
+  else{pf.style.width='100%';if(!document.getElementById('log').children.length)welcome();setTimeout(()=>document.getElementById('ci').focus(),300);}
+}
+function go(d){const n=cur+d;if(n>=0&&n<pages.length)goTo(n);}
+
+const log=document.getElementById('log');
+function welcome(){addMsg('ai','👋 Hola! Soy el Asistente de Vapor de Cartocor.\n\nPodés preguntarme sobre cilindros, sifones, termocompresores, separadores, bombas y qué hacer cuando algo no anda bien.\n\nUsá los botones de arriba o escribí tu pregunta.');}
+
+function fmt(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');}
+
+function addMsg(r,t){
+  const d=document.createElement('div');d.className='msg '+(r==='ai'?'a':'u');
+  const av=document.createElement('div');av.className='av';av.textContent=r==='ai'?'🤖':'👷';
+  const b=document.createElement('div');b.className='bub';b.innerHTML=fmt(t);
+  d.appendChild(av);d.appendChild(b);log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+
+function addTyping(){
+  const d=document.createElement('div');d.className='msg a';d.id='ty';
+  const av=document.createElement('div');av.className='av';av.textContent='🤖';
+  const t=document.createElement('div');t.className='typing';t.innerHTML='<span></span><span></span><span></span>';
+  d.appendChild(av);d.appendChild(t);log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+
+let busy=false;
+async function send(){
+  const ci=document.getElementById('ci');
+  const txt=ci.value.trim();if(!txt||busy)return;
+  busy=true;document.getElementById('sb').disabled=true;ci.value='';ci.style.height='auto';
+  document.getElementById('qs').style.display='none';
+  addMsg('user',txt);addTyping();
+  await new Promise(r=>setTimeout(r,500));
+  document.getElementById('ty')?.remove();
+  addMsg('ai',responder(txt));
+  busy=false;document.getElementById('sb').disabled=false;ci.focus();
+}
+
+document.getElementById('ci').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+document.getElementById('ci').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+document.addEventListener('keydown',e=>{if(cur===pages.length-1)return;if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);});
+goTo(0);
+</script>
+</body>
+</html>
